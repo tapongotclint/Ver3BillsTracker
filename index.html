@@ -1,0 +1,94 @@
+
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Budget Tracker Pro V4</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<style>
+body{font-family:Arial;background:#eef2ff;margin:0;padding:15px}
+.card{background:#fff;padding:15px;border-radius:14px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{font-size:1.2rem;font-weight:bold} input,button{width:100%;padding:10px;margin:4px 0}
+.logo{text-align:center} img{width:80px}
+</style></head><body>
+<div class="logo"><img src="icon-192.png"><h2>Budget Tracker Pro V4</h2></div>
+
+<div class="card">
+Salary per Month <input id="salary" type="number" value="18000">
+Savings Goal <input id="goal" type="number" value="5000">
+<button onclick="save()">Save Settings</button>
+</div>
+
+<div class="grid">
+<div class="card"><div>Balance</div><div class="stat" id="bal"></div></div>
+<div class="card"><div>Expenses</div><div class="stat" id="exp"></div></div>
+<div class="card"><div>Bills</div><div class="stat" id="bills"></div></div>
+<div class="card"><div>Savings Progress</div><div class="stat" id="savep"></div></div>
+<div class="card"><div>Coffee Total</div><div class="stat" id="coffee"></div></div>
+<div class="card"><div>Days to Payday</div><div class="stat" id="payday"></div></div>
+</div>
+
+<div class="card">
+<h3>Add Expense</h3>
+<input id="date" type="date">
+<input id="desc" placeholder="Description">
+<input id="amt" type="number" placeholder="Amount">
+<button onclick="addExpense()">Add Expense</button>
+</div>
+
+<div class="card">
+<h3>Add Bill</h3>
+<input id="bname" placeholder="Bill Name">
+<input id="bamt" type="number" placeholder="Amount">
+<button onclick="addBill()">Add Bill</button>
+</div>
+
+<div class="card"><h3>Expenses</h3><ul id="elist"></ul></div>
+<div class="card"><h3>Bills</h3><ul id="blist"></ul></div>
+
+<script>
+let salary=+(localStorage.salary||18000);
+let goal=+(localStorage.goal||5000);
+let expenses=JSON.parse(localStorage.expenses||"[]");
+let billsArr=JSON.parse(localStorage.billsArr||'[{"name":"15th Bill","amount":4086},{"name":"20th Bill","amount":1700}]');
+
+salary.value=salary;
+
+function save(){
+localStorage.salary=document.getElementById('salary').value;
+localStorage.goal=document.getElementById('goal').value;
+update();
+}
+function addExpense(){
+expenses.push({date:date.value,desc:desc.value,amount:+amt.value});
+localStorage.expenses=JSON.stringify(expenses); update();
+}
+function addBill(){
+billsArr.push({name:bname.value,amount:+bamt.value});
+localStorage.billsArr=JSON.stringify(billsArr); update();
+}
+function daysToPayday(){
+let n=new Date(),d=n.getDate();
+let next=d<20?20:5;
+let t=new Date(n.getFullYear(),n.getMonth()+(d>=20),next);
+return Math.ceil((t-n)/86400000);
+}
+function update(){
+salary=+(localStorage.salary||18000);
+goal=+(localStorage.goal||5000);
+let ex=expenses.reduce((a,b)=>a+b.amount,0);
+let bi=billsArr.reduce((a,b)=>a+b.amount,0);
+let balance=salary-ex-bi;
+let coffeeTot=expenses.filter(x=>(x.desc||'').toLowerCase().includes('coffee')).reduce((a,b)=>a+b.amount,0);
+bal.textContent='₱'+balance.toLocaleString();
+exp.textContent='₱'+ex.toLocaleString();
+bills.textContent='₱'+bi.toLocaleString();
+coffee.textContent='₱'+coffeeTot.toLocaleString();
+savep.textContent=Math.max(0,balance)+' / ₱'+goal.toLocaleString();
+payday.textContent=daysToPayday();
+elist.innerHTML=expenses.map(x=>`<li>${x.date} | ${x.desc} | ₱${x.amount}</li>`).join('');
+blist.innerHTML=billsArr.map(x=>`<li>${x.name} | ₱${x.amount}</li>`).join('');
+}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}
+update();
+</script></body></html>
